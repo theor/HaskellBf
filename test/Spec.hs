@@ -1,6 +1,8 @@
 import Test.Hspec
 
-import Data.Vector as V
+import qualified Data.Word
+import qualified Data.List as L
+import qualified Data.Vector as V
 import qualified Op
 import qualified Tape
 import qualified State
@@ -11,34 +13,39 @@ checkOp op checks =
       n = State.stepop op tape state
   in checks state n
 
+checkOpPreds op preds =
+  checkOp op (\ s n ->
+    mapM_ (\x -> x n) preds)
+
+shouldEq x y n = x n `shouldBe` y
+
+shouldEqF x y n = x n `shouldBe` y n
 
 main :: IO ()
 main = hspec $ do
   describe "Prelude.head" $
     it "returns the first element of a list" $
-      Prelude.head [23 ..] `shouldBe` (23 :: Int)
+      head [23 ..] `shouldBe` (23 :: Int)
 
   describe "Ops" $ do
-    it "should increment data" $
-      checkOp Op.Add (\s -> \n -> do
-          State.ip n `shouldBe` 1
-          State.mem n ! 0 `shouldBe` 1)
+    it "should increment data too" $
+      checkOpPreds Op.Add
+        [ State.ip `shouldEq` 1
+        , State.memAt 0 `shouldEq` (1 :: Data.Word.Word8) ]
 
     it "should decrement data" $
-      checkOp Op.Sub (\s -> \n -> do
-          State.ip n `shouldBe` 1
-          State.mem n ! 0 `shouldBe` 255)
+      checkOpPreds Op.Sub
+        [ State.ip `shouldEq` 1
+        , State.memAt 0 `shouldEq` 255 ]
 
     it "should increment data pointer" $
-      checkOp Op.PRight (\s -> \n -> do
-          State.ip n `shouldBe` 1
-          State.dp n `shouldBe` 1
-          State.mem n ! 0 `shouldBe` 0)
+      checkOpPreds Op.PRight
+          [ State.ip `shouldEq` 1
+          , State.dp `shouldEq` 1
+          , State.memAt 0 `shouldEq` 0 ]
 
     it "should increment data pointer" $
-      checkOp Op.PLeft (\s -> \n -> do
-          State.ip n `shouldBe` 1
-          State.dp n `shouldBe` (V.length . State.mem $ n) - 1
-          State.mem n ! 0 `shouldBe` 0)
-
-
+      checkOpPreds Op.PLeft
+          [ State.ip `shouldEq` 1
+          , State.dp `shouldEqF` (flip (-) 1 . V.length . State.mem)
+          , State.memAt 0 `shouldEq` 0 ]

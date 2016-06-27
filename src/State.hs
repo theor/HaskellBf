@@ -13,6 +13,8 @@ data State = State { ip :: Int
 new :: State
 new = State 0 0 (V.replicate 8 0)
 
+memAt = flip $ (V.!) . mem
+
 incrIp :: State -> State
 incrIp s = s { ip = ip s + 1 }
 
@@ -26,7 +28,7 @@ stepop op t s =
     PRight -> incrIp $ s { dp = mod (dp s + 1) len }
     PLeft -> incrIp $ s { dp = mod (dp s - 1 + len) len }
     -- _ -> remaining
-  
+
 
 step :: Tape -> State -> Maybe State
 step tape state = do
