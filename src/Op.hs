@@ -1,3 +1,3 @@
 module Op where
 
-data Op = Add | Sub | Left | Right | Loop | LoopEnd | Write | Read
+data Op = Add | Sub | PLeft | PRight | Loop | LoopEnd | Write | Read
